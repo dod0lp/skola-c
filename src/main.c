@@ -4,29 +4,38 @@
 #include <stdbool.h>
 
 #define MAX_OPTION_SIZE 100
-#define NUM_KEYS 4
+#define NUM_OPTIONS 4
 
 // -t shows names of files/folders in the archive
 
-char Options[NUM_KEYS] = { 't', 'f', 'x', 'v' };
+char Options[NUM_OPTIONS] = { 't', 'f', 'x', 'v' };
 
 typedef struct {
     char value[MAX_OPTION_SIZE + 1];
     bool is_set;
-} Values;
+} _Values;
 
-void initializeValues() {
-    for (int i = 0; i < NUM_KEYS; i++) {
-        values[i].value[MAX_OPTION_SIZE] = '\0';
-        values[i].is_set = false;
+_Values Values[NUM_OPTIONS];
+
+void init_option_values() {
+    for (int i = 0; i < NUM_OPTIONS; i++) {
+        for (int j = 0; j < MAX_OPTION_SIZE + 1; j++) {
+            Values[i].value[j] = 0;
+        }
+        Values[i].is_set = false;
     }
 }
 
-bool is_t_option(const char* option) {
-    if (strcmp(option, "-t") == 0) {
-        return true;
+char is_valid_option(const char* option) {
+    if (strlen(option) != 2) {
+        return 0;
     }
-    return false;
+    for (int i = 0; i < NUM_OPTIONS; i++) {
+        if (option[1] == Options[i]) {
+            return option[1];
+        }
+    }
+    return 0;
 }
 
 void t_option(const char* archive_name) { 
@@ -37,12 +46,10 @@ void t_option(const char* archive_name) {
 }
 
 int main(int argc, char* argv[]) {
-    // printf("Number of arguments: %d\n", argc);
-
     for (int i = 0; i < argc; i++) {
-        // printf("Argument %d: %s\n", i, argv[i]);
-        if (is_t_option(argv[i])) {
-            printf("option is %s %d", argv[i], i);
+        char temp = is_valid_option(argv[i]);
+        if (temp != 0) {
+            printf("option is %c %d", temp, i);
         }
     }
     return 0;
