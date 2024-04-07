@@ -10,12 +10,7 @@
 
 char Options[NUM_OPTIONS] = { 't', 'f', 'x', 'v' };
 
-typedef struct {
-    char value[MAX_OPTION_SIZE + 1];
-    bool is_set;
-} _Values;
-
-_Values Values[NUM_OPTIONS];
+// TODO: Just make array of values for each option (some option can be like 'file1, file2,...')
 
 void init_option_values() {
     for (int i = 0; i < NUM_OPTIONS; i++) {
