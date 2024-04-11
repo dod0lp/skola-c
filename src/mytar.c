@@ -3,22 +3,25 @@
 #include <string.h>
 #include <stdbool.h>
 
-#define MAX_OPTION_SIZE 100
+#define MAX_OPTION_SIZE 50
+#define NUM_OPTIONS_STRINGS 10
 #define NUM_OPTIONS 4
 
 // -t shows names of files/folders in the archive
 
 char Options[NUM_OPTIONS] = { 't', 'f', 'x', 'v' };
 
+// TODO: Make bools to know what option was set
+
+char option_t_values[NUM_OPTIONS_STRINGS][MAX_OPTION_SIZE];
+char option_f_values[NUM_OPTIONS_STRINGS][MAX_OPTION_SIZE];
+char option_x_values[NUM_OPTIONS_STRINGS][MAX_OPTION_SIZE];
+char option_v_values[NUM_OPTIONS_STRINGS][MAX_OPTION_SIZE];
+
 // TODO: Just make array of values for each option (some option can be like 'file1, file2,...')
 
 void init_option_values() {
-    for (int i = 0; i < NUM_OPTIONS; i++) {
-        for (int j = 0; j < MAX_OPTION_SIZE + 1; j++) {
-            Values[i].value[j] = 0;
-        }
-        Values[i].is_set = false;
-    }
+    // TODO: Fill arrays with zeros or something
 }
 
 char is_valid_option(const char* option) {
