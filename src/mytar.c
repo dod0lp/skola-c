@@ -20,8 +20,6 @@ char option_f_values[NUM_OPTIONS_STRINGS][MAX_OPTION_SIZE];
 char option_x_values[NUM_OPTIONS_STRINGS][MAX_OPTION_SIZE];
 char option_v_values[NUM_OPTIONS_STRINGS][MAX_OPTION_SIZE];
 
-// TODO: Just make array of values for each option (some option can be like 'file1, file2,...')
-
 void init_option_values() {
     // TODO: Fill arrays with zeros or something
 }
@@ -31,7 +29,7 @@ char is_valid_option(const char* option) {
         return 0;
     }
     for (int i = 0; i < NUM_OPTIONS; i++) {
-        if (option[1] == Options[i]) {
+        if (option[1] == Options[i] && option[0] == '-') {
             return option[1];
         }
     }
