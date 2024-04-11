@@ -13,6 +13,8 @@ char Options[NUM_OPTIONS] = { 't', 'f', 'x', 'v' };
 
 // TODO: Make bools to know what option was set
 
+// TODO: fix arrays below to properly know which option needs no value/only 1value etc so there
+//       is not space allocated for no reason
 char option_t_values[NUM_OPTIONS_STRINGS][MAX_OPTION_SIZE];
 char option_f_values[NUM_OPTIONS_STRINGS][MAX_OPTION_SIZE];
 char option_x_values[NUM_OPTIONS_STRINGS][MAX_OPTION_SIZE];
