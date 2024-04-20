@@ -10,8 +10,8 @@
 // -t shows names of files/folders in the archive
 
 char Options[NUM_OPTIONS] = { 't', 'f', 'x', 'v' };
+static bool OptionsSet[26] = { false }; // make true to show that this option was used as argument
 
-// TODO: Make bools to know what option was set
 
 // TODO: fix arrays below to properly know which option needs no value/only 1value etc so there
 //       is not space allocated for no reason
@@ -44,11 +44,11 @@ void t_option(const char* archive_name) {
 }
 
 int main(int argc, char* argv[]) {
-    for (int i = 0; i < argc; i++) {
-        char temp = is_valid_option(argv[i]);
-        if (temp != 0) {
-            printf("option is %c %d", temp, i);
-        }
-    }
+    // for (int i = 0; i < argc; i++) {
+    //     char temp = is_valid_option(argv[i]);
+    //     if (temp != 0) {
+    //         printf("option is %c %d", temp, i);
+    //     }
+    // }
     return 0;
 }
