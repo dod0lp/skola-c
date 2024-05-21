@@ -5,20 +5,21 @@
 
 #define MAX_OPTION_SIZE 50
 #define NUM_OPTIONS_STRINGS 10
-#define NUM_OPTIONS 4
+#define NUM_OPTIONS 5
 
 // -t shows names of files/folders in the archive
 
-char Options[NUM_OPTIONS] = { 't', 'f', 'x', 'v' };
+char Options[NUM_OPTIONS] = { 't', 'f', 'x', 'v', 'c' };
 static bool OptionsSet[26] = { false }; // make true OptionSet[char] to show that this option -char was used as argument
 
 
 // TODO: fix arrays below to properly know which option needs no value/only 1value etc so there
 //       is not space allocated for no reason
 char option_f_values[NUM_OPTIONS_STRINGS][MAX_OPTION_SIZE];
-char option_t_values[NUM_OPTIONS_STRINGS];
-char option_x_values[NUM_OPTIONS_STRINGS];
-char option_v_values[NUM_OPTIONS_STRINGS];
+char option_c_values[NUM_OPTIONS_STRINGS][MAX_OPTION_SIZE];
+// char option_t_values[NUM_OPTIONS_STRINGS];
+// char option_x_values[NUM_OPTIONS_STRINGS];
+// char option_v_values[NUM_OPTIONS_STRINGS];
 
 void init_option_values() {
     // TODO: Fill arrays with zeros or something
@@ -30,6 +31,7 @@ char is_valid_option(const char* option) {
     }
     for (int i = 0; i < NUM_OPTIONS; i++) {
         if (option[1] == Options[i] && option[0] == '-') {
+            OptionsSet[option[1]] = true;
             return option[1];
         }
     }
