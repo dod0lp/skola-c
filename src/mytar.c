@@ -5,18 +5,21 @@
 
 #define MAX_OPTION_SIZE 50
 #define NUM_OPTIONS_STRINGS 10
-#define NUM_OPTIONS 5
+#define NUM_OPTIONS 4
 
-// -t shows names of files/folders in the archive
+// -t List the contents of an archive. Arguments are optional.
+// -f specify Archive Filename [1arg]
+// -v Verbosely list files processed
+// -x Extract files from an archive.  Arguments are optional.
+    //   When given, they specify names of the archive members to be extracted.
 
-char Options[NUM_OPTIONS] = { 't', 'f', 'x', 'v', 'c' };
+char Options[NUM_OPTIONS] = { 'f', 't', 'x', 'v' };
 static bool OptionsSet[26] = { false }; // make true OptionSet[char] to show that this option -char was used as argument
 
 
 // TODO: fix arrays below to properly know which option needs no value/only 1value etc so there
 //       is not space allocated for no reason
 char option_f_values[NUM_OPTIONS_STRINGS][MAX_OPTION_SIZE];
-char option_c_values[NUM_OPTIONS_STRINGS][MAX_OPTION_SIZE];
 // char option_t_values[NUM_OPTIONS_STRINGS];
 // char option_x_values[NUM_OPTIONS_STRINGS];
 // char option_v_values[NUM_OPTIONS_STRINGS];
