@@ -8,8 +8,8 @@
 #define MAX_ARCHIVENAME_LEN 50
 #define NUM_OPTIONS 4
 
+// -f specify Archive Filename [1 arg]
 // -t List the contents of an archive. Arguments are optional.
-// -f specify Archive Filename [1arg]
 // -v Verbosely list files processed
 // -x Extract files from an archive.  Arguments are optional.
     //   When given, they specify names of the archive members to be extracted.
@@ -20,8 +20,9 @@ static bool OptionsSet[26] = { false }; // make true OptionSet[char] to show tha
 
 // TODO: fix arrays below to properly know which option needs no value/only 1value etc so there
 //       is not space allocated for no reason
-char option_f_values[NUM_OPTIONS_STRINGS][MAX_OPTION_SIZE];
-// char option_t_values
+char option_t_values[NUM_OPTIONS_STRINGS][MAX_OPTION_SIZE];
+int t_iterator = 0;
+// char option_f_values[NUM_OPTIONS_STRINGS][MAX_OPTION_SIZE];
 // char option_x_values
 // char option_v_values
 
@@ -50,13 +51,25 @@ void t_option(const char* archive_name) {
 }
 
 int main(int argc, char* argv[]) {
-    char ArchiveName[MAX_ARCHIVENAME_LEN] = "";
+    char f_ArchiveName[MAX_ARCHIVENAME_LEN] = "";
+    
     for (int i = 1; i < argc; ++i) {
         if (is_valid_option(argv[i]) == 'f') {
             if (i+1 < argc && !is_valid_option(argv[i + 1])) {
-                printf("%s", argv[i + 1]);
-                strncpy(ArchiveName, argv[i + 1], MAX_ARCHIVENAME_LEN);
-                ArchiveName[MAX_ARCHIVENAME_LEN - 1] = '\0';
+                ++i;
+                printf("%s", argv[i]);
+                strncpy(f_ArchiveName, argv[i], MAX_ARCHIVENAME_LEN);
+                f_ArchiveName[MAX_ARCHIVENAME_LEN - 1] = '\0';
+            } else {
+                fprintf(stderr, "No archive name provided.\n");
+                return 1;
+            }
+        }
+
+        if (is_valid_option(argv[i]) == 't') {
+            while (i+1 < argc && !is_valid_option(argv[i + 1])) {
+                // TODO: Add file names specified
+                // option_t_values[t_iterator]
             }
         }
     }
