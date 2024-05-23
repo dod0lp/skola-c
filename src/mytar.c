@@ -6,7 +6,7 @@
 #define MAX_OPTION_SIZE 50
 #define NUM_OPTIONS_STRINGS 10
 #define MAX_ARCHIVENAME_LEN 50
-#define NUM_OPTIONS 4
+#define ALPHABET_LENGTH 256
 
 // -f specify Archive Filename [1 arg]
 // -t List the contents of an archive. Arguments are optional.
@@ -14,14 +14,16 @@
 // -x Extract files from an archive.  Arguments are optional.
     //   When given, they specify names of the archive members to be extracted.
 
+#define NUM_OPTIONS 4
 char Options[NUM_OPTIONS] = { 'f', 't', 'x', 'v' };
-static bool OptionsSet[26] = { false }; // make true OptionSet[char] to show that this option -char was used as argument
+
+static bool OptionsSet[ALPHABET_LENGTH] = { false }; // make true OptionSet[char] to show that this option -char was used as argument
 
 
 // TODO: fix arrays below to properly know which option needs no value/only 1value etc so there
 //       is not space allocated for no reason
-char option_t_values[NUM_OPTIONS_STRINGS][MAX_OPTION_SIZE];
 int t_iterator = 0;
+char option_t_values[NUM_OPTIONS_STRINGS][MAX_OPTION_SIZE];
 char f_ArchiveName[MAX_ARCHIVENAME_LEN] = "";
 // char option_x_values
 // char option_v_values
@@ -30,14 +32,43 @@ void init_option_values() {
     // TODO: Fill arrays with zeros or something
 }
 
-// If not valid returns false (int == 0), otherwise char that was used as short option
-char is_valid_option(const char* option) {
+// Checks if there is atleast one option set, and if there are some options set, check if they are all valid
+// If no option set, return 1
+// If invalid option set, return 2
+int check_set_options() {
+    int option_set = 1;
+
+    for (int i = 0; i < ALPHABET_LENGTH; i++) {
+        if (OptionsSet[i] == true) {
+            option_set = 0;
+            bool temp = false;
+
+            for (int j = 0; j < NUM_OPTIONS; ++j) {
+                printf("%d\n", i);
+                if (i == Options[j]) {
+                    temp = true;
+                }
+            }
+            if (temp == false) {
+                return 2;
+            }
+        }
+    }
+    return option_set;
+}
+
+// If not valid returns false (int == 0), if option is outside of range of chars a-z returns -1
+// Otherwise return char value as int
+int is_valid_option(const char* option) {
     if (strlen(option) != 2) {
         return 0;
     }
     for (int i = 0; i < NUM_OPTIONS; i++) {
         if (option[1] == Options[i] && option[0] == '-') {
-            OptionsSet[option[1] - 'a'] = true;
+            if (option[1] < 'a' || option[1] > 'z') {
+                return -1;
+            }
+            OptionsSet[option[1] - 0] = true;
             return option[1];
         }
     }
@@ -61,9 +92,6 @@ int main(int argc, char* argv[]) {
         if (is_valid_option(argv[i]) == 'f') {
             if (i+1 < argc && !is_valid_option(argv[i + 1])) {
                 ++i;
-                // printf("%s", argv[i]);
-                // strncpy(f_ArchiveName, argv[i], MAX_ARCHIVENAME_LEN);
-                // f_ArchiveName[MAX_ARCHIVENAME_LEN - 1] = '\0';
                 copy_and_ensure_null_termination(f_ArchiveName, argv[i], MAX_ARCHIVENAME_LEN);
             } else {
                 fprintf(stderr, "No archive name provided.\n");
@@ -74,18 +102,18 @@ int main(int argc, char* argv[]) {
         if (is_valid_option(argv[i]) == 't') {
             while (i+1 < argc && !is_valid_option(argv[i + 1])) {
                 ++i;
-                // strncpy(option_t_values[t_iterator], argv[i], MAX_OPTION_SIZE);
-                // option_t_values[t_iterator][MAX_OPTION_SIZE - 1] = '\0';
                 copy_and_ensure_null_termination(option_t_values[t_iterator++], argv[i], MAX_OPTION_SIZE);
             }
         }
     }
 
+    printf("%d", check_set_options());
 
-    printf("%s\n", f_ArchiveName);
+    // PRINT OPTIONS
+    // printf("%s\n", f_ArchiveName);
 
-    for (int i = 0; i < t_iterator; ++i) {
-        printf("%s\n", option_t_values[i]);
-    }
+    // for (int i = 0; i < t_iterator; ++i) {
+    //     printf("%s\n", option_t_values[i]);
+    // }
     return 0;
 }
