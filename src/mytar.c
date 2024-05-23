@@ -57,21 +57,21 @@ int check_set_options() {
     return option_set;
 }
 
-// If not valid returns false (int == 0), if option is outside of range of chars a-z returns -1
+// MAYBE: If option was already encountered return -1
+// If not valid returns false (int == 0)
 // Otherwise return char value as int
 int is_valid_option(const char* option) {
     if (strlen(option) != 2) {
         return 0;
     }
-    for (int i = 0; i < NUM_OPTIONS; i++) {
-        if (option[1] == Options[i] && option[0] == '-') {
-            if (option[1] < 'a' || option[1] > 'z') {
-                return -1;
-            }
-            OptionsSet[option[1] - 0] = true;
-            return option[1];
-        }
+    char first = option[0];
+    char second = option[1];
+
+    if (first == '-') {
+        OptionsSet[second - 0] = true;
+        return second;
     }
+
     return 0;
 }
 
