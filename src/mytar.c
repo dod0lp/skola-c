@@ -22,7 +22,7 @@ static bool OptionsSet[26] = { false }; // make true OptionSet[char] to show tha
 //       is not space allocated for no reason
 char option_t_values[NUM_OPTIONS_STRINGS][MAX_OPTION_SIZE];
 int t_iterator = 0;
-// char option_f_values[NUM_OPTIONS_STRINGS][MAX_OPTION_SIZE];
+char f_ArchiveName[MAX_ARCHIVENAME_LEN] = "";
 // char option_x_values
 // char option_v_values
 
@@ -30,6 +30,7 @@ void init_option_values() {
     // TODO: Fill arrays with zeros or something
 }
 
+// If not valid returns false (int == 0), otherwise char that was used as short option
 char is_valid_option(const char* option) {
     if (strlen(option) != 2) {
         return 0;
@@ -50,16 +51,20 @@ void t_option(const char* archive_name) {
     }
 }
 
+void ensure_null_termination(char* to, const char* from, int max_len) {
+    strncpy(to, from, max_len);
+    to[max_len - 1] = '\0';
+}
+
 int main(int argc, char* argv[]) {
-    char f_ArchiveName[MAX_ARCHIVENAME_LEN] = "";
-    
     for (int i = 1; i < argc; ++i) {
         if (is_valid_option(argv[i]) == 'f') {
             if (i+1 < argc && !is_valid_option(argv[i + 1])) {
                 ++i;
-                printf("%s", argv[i]);
-                strncpy(f_ArchiveName, argv[i], MAX_ARCHIVENAME_LEN);
-                f_ArchiveName[MAX_ARCHIVENAME_LEN - 1] = '\0';
+                //printf("%s", argv[i]);
+                // strncpy(f_ArchiveName, argv[i], MAX_ARCHIVENAME_LEN);
+                // f_ArchiveName[MAX_ARCHIVENAME_LEN - 1] = '\0'; // apparently this is needed because we are in C
+                ensure_null_termination(f_ArchiveName, argv[i], MAX_ARCHIVENAME_LEN);
             } else {
                 fprintf(stderr, "No archive name provided.\n");
                 return 1;
@@ -68,10 +73,14 @@ int main(int argc, char* argv[]) {
 
         if (is_valid_option(argv[i]) == 't') {
             while (i+1 < argc && !is_valid_option(argv[i + 1])) {
-                // TODO: Add file names specified
-                // option_t_values[t_iterator]
+                ++i;
+                // strncpy(option_t_values[t_iterator], argv[i], MAX_OPTION_SIZE);
+                // option_t_values[t_iterator][MAX_OPTION_SIZE - 1] = '\0';
+                ensure_null_termination(option_t_values[t_iterator], argv[i], MAX_OPTION_SIZE);
             }
         }
     }
+
+    printf("%s", f_ArchiveName);
     return 0;
 }
