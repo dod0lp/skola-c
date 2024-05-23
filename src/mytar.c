@@ -105,6 +105,18 @@ void mark_file_found() {
     }
 }
 
+int report_not_found_files() {
+    int ret_code = 0;
+    for (int i = 0; i < t_iterator; ++i) {
+        if (!found[i]) {
+            fprintf(stderr, "mytar: %s: Not found in archive\n", option_t_values[i]);
+            ret_code = 2;
+        }
+    }
+
+    return ret_code;
+}
+
 void copy_and_ensure_null_termination(char* to, const char* from, int max_len) { // Maybe not the best name
     strncpy(to, from, max_len);
     to[max_len - 1] = '\0'; // apparently this is needed because we are in C
@@ -138,5 +150,7 @@ int main(int argc, char* argv[]) {
     // for (int i = 0; i < t_iterator; ++i) {
     //     printf("%s\n", option_t_values[i]);
     // }
-    return 0;
+
+    // TODO: This probably wont be only error possible
+    return report_not_found_files();
 }
