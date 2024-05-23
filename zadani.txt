@@ -1,3 +1,5 @@
+tar manpage: https://man7.org/linux/man-pages/man1/tar.1.html
+
 # MFF UK NPRG066 (The C Programming Language) Assignment For Credits
 
 Tar: A GNU tar compatible tape archiver
