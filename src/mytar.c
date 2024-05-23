@@ -51,9 +51,9 @@ void t_option(const char* archive_name) {
     }
 }
 
-void ensure_null_termination(char* to, const char* from, int max_len) {
+void copy_and_ensure_null_termination(char* to, const char* from, int max_len) { // Maybe not the best name
     strncpy(to, from, max_len);
-    to[max_len - 1] = '\0';
+    to[max_len - 1] = '\0'; // apparently this is needed because we are in C
 }
 
 int main(int argc, char* argv[]) {
@@ -61,10 +61,10 @@ int main(int argc, char* argv[]) {
         if (is_valid_option(argv[i]) == 'f') {
             if (i+1 < argc && !is_valid_option(argv[i + 1])) {
                 ++i;
-                //printf("%s", argv[i]);
+                // printf("%s", argv[i]);
                 // strncpy(f_ArchiveName, argv[i], MAX_ARCHIVENAME_LEN);
-                // f_ArchiveName[MAX_ARCHIVENAME_LEN - 1] = '\0'; // apparently this is needed because we are in C
-                ensure_null_termination(f_ArchiveName, argv[i], MAX_ARCHIVENAME_LEN);
+                // f_ArchiveName[MAX_ARCHIVENAME_LEN - 1] = '\0';
+                copy_and_ensure_null_termination(f_ArchiveName, argv[i], MAX_ARCHIVENAME_LEN);
             } else {
                 fprintf(stderr, "No archive name provided.\n");
                 return 1;
@@ -76,11 +76,16 @@ int main(int argc, char* argv[]) {
                 ++i;
                 // strncpy(option_t_values[t_iterator], argv[i], MAX_OPTION_SIZE);
                 // option_t_values[t_iterator][MAX_OPTION_SIZE - 1] = '\0';
-                ensure_null_termination(option_t_values[t_iterator], argv[i], MAX_OPTION_SIZE);
+                copy_and_ensure_null_termination(option_t_values[t_iterator++], argv[i], MAX_OPTION_SIZE);
             }
         }
     }
 
-    printf("%s", f_ArchiveName);
+
+    printf("%s\n", f_ArchiveName);
+
+    for (int i = 0; i < t_iterator; ++i) {
+        printf("%s\n", option_t_values[i]);
+    }
     return 0;
 }
