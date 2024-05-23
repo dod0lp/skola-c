@@ -24,6 +24,9 @@ static bool OptionsSet[ALPHABET_LENGTH] = { false }; // make true OptionSet[char
 //       is not space allocated for no reason
 int t_iterator = 0;
 char option_t_values[NUM_OPTIONS_STRINGS][MAX_OPTION_SIZE];
+
+// Files that were found for -t option
+bool found[NUM_OPTIONS_STRINGS] = { false };
 char f_ArchiveName[MAX_ARCHIVENAME_LEN] = "";
 // char option_x_values
 // char option_v_values
@@ -75,10 +78,30 @@ int is_valid_option(const char* option) {
     return 0;
 }
 
-void t_option(const char* archive_name) { 
-    FILE *file = fopen(archive_name, "rb");
-    if (file == NULL) {
+void t_option() { 
+    FILE *archive = fopen(f_ArchiveName, "rb");
+    if (archive == NULL) {
+        fprintf(stderr, "mytar: Archive file is NULL.");
         return;
+    }
+}
+
+// Function to check if a file name is in the requested list
+bool is_requested_file() {
+    for (int i = 0; i < t_iterator; ++i) {
+        if (strcmp(f_ArchiveName, option_t_values[i]) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Function to mark file as found in the requested list
+void mark_file_found() {
+    for (int i = 0; i < t_iterator; ++i) {
+        if (strcmp(f_ArchiveName, option_t_values[i]) == 0) {
+            found[i] = true;
+        }
     }
 }
 
