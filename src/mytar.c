@@ -8,6 +8,10 @@
 #define MAX_ARCHIVENAME_LEN 50
 #define ALPHABET_LENGTH 256
 
+#define Error_File_Not_Found "mytar: %s: Not found in archive\n"
+const char* Error_No_Name_Provided = "mytar: No archive name provided.";
+const char* Error_File_Is_Null = "mytar: Archive file is NULL.";
+
 // -f specify Archive Filename [1 arg]
 // -t List the contents of an archive. Arguments are optional.
 // -v Verbosely list files processed
@@ -81,7 +85,7 @@ int is_valid_option(const char* option) {
 void t_option() { 
     FILE *archive = fopen(f_ArchiveName, "rb");
     if (archive == NULL) {
-        fprintf(stderr, "mytar: Archive file is NULL.");
+        fprintf(stderr, Error_File_Is_Null);
         return;
     }
 }
@@ -109,7 +113,7 @@ int report_not_found_files() {
     int ret_code = 0;
     for (int i = 0; i < t_iterator; ++i) {
         if (!found[i]) {
-            fprintf(stderr, "mytar: %s: Not found in archive\n", option_t_values[i]);
+            fprintf(stderr, Error_File_Not_Found, option_t_values[i]);
             ret_code = 2;
         }
     }
@@ -129,7 +133,7 @@ int main(int argc, char* argv[]) {
                 ++i;
                 copy_and_ensure_null_termination(f_ArchiveName, argv[i], MAX_ARCHIVENAME_LEN);
             } else {
-                fprintf(stderr, "No archive name provided.\n");
+                fprintf(stderr, Error_No_Name_Provided);
                 return 1;
             }
         }
