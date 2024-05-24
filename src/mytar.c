@@ -9,9 +9,15 @@
 #define MAX_ARCHIVENAME_LEN 50
 #define ALPHABET_LENGTH 256
 
+#define TAR_HEADER_SIZE 512
+#define REGTYPE '0' // new tar or something, otherwise it is \0 or w.e
+#define REGTYPE_OLD '\0'
+#define ARCHIVE_FILEDATA_SIZE 124
+
 // Error messages
 #define Error_File_Not_Found "mytar: %s: Not found in archive\n"
 #define Error_Invalid_Option "mytar: Unknown option: -%c\n"
+#define Error_Unsupported_Header "mytar: Unsupported header type: %d\n"
 const char* Error_No_Name_Provided = "mytar: No archive name provided.";
 const char* Error_File_Is_Null = "mytar: Archive file is NULL.";
 
@@ -27,6 +33,8 @@ char Options[NUM_OPTIONS] = { 'f', 't', 'x', 'v' };
 // If short option -c is found, sets [(int)c] to true
 static bool OptionsSet[ALPHABET_LENGTH] = { false };
 
+char header[TAR_HEADER_SIZE];
+
 
 // Usage: for (int i = 0; i < t_iterator; ++i) { 
     //        char* ch = option_t_values[i];...
@@ -35,7 +43,7 @@ int t_iterator = 0;
 char option_t_values[NUM_OPTIONS_STRINGS][MAX_OPTION_SIZE];
 
 // Files that were found for -t option
-bool found_files_t[NUM_OPTIONS_STRINGS] = { false };
+bool t_found_files[NUM_OPTIONS_STRINGS] = { false };
 
 // Sets f archive name to what was found on command line, defautl is empty
 // even though by tar std it should be defined in Path or somewhere
@@ -94,21 +102,10 @@ int is_valid_option(const char* option) {
     return 0;
 }
 
-// When encountered t_option either list all, or when there was -t set, find only files needed
-// TODO: When more options are added, this should be decomposed into
-// function for traversing file, and to function doing things for specific option...
-void t_option() { 
-    FILE *archive = fopen(f_archive_name, "rb");
-    if (archive == NULL) {
-        fprintf(stderr, Error_File_Is_Null);
-        return;
-    }
-}
-
 // Function to check if a file name is in the requested -t files list
-bool t_is_requested_file() {
+bool t_is_requested_file(char* file) {
     for (int i = 0; i < t_iterator; ++i) {
-        if (strcmp(f_archive_name, option_t_values[i]) == 0) {
+        if (strcmp(file, option_t_values[i]) == 0) {
             return true;
         }
     }
@@ -116,10 +113,10 @@ bool t_is_requested_file() {
 }
 
 // Function to mark file as found in the requested -t list
-void t_mark_file_found() {
+void t_mark_file_found(char* file) {
     for (int i = 0; i < t_iterator; ++i) {
-        if (strcmp(f_archive_name, option_t_values[i]) == 0) {
-            found_files_t[i] = true;
+        if (strcmp(file, option_t_values[i]) == 0) {
+            t_found_files[i] = true;
         }
     }
 }
@@ -128,7 +125,7 @@ void t_mark_file_found() {
 int t_report_not_found_files() {
     int ret_code = 0;
     for (int i = 0; i < t_iterator; ++i) {
-        if (!found_files_t[i]) {
+        if (!t_found_files[i]) {
             fprintf(stderr, Error_File_Not_Found, option_t_values[i]);
             ret_code = 2;
         }
@@ -137,10 +134,64 @@ int t_report_not_found_files() {
     return ret_code;
 }
 
-// String assingment...
+void t_write_found_files() {
+    for (int i = 0; i < t_iterator; ++i) {
+        printf("%s\n", option_t_values[i]);
+    }
+}
+
+// String assingment strncpy
 void copy_and_ensure_null_termination(char* to, const char* from, int max_len) { // Maybe not the best name
     strncpy(to, from, max_len);
     to[max_len - 1] = '\0'; // apparently this is needed because we are in C
+}
+
+// When encountered t_option either list all, or when there was -t set, find only files needed
+// TODO: When more options are added, this should be decomposed into
+// function for traversing file, and to function doing things for specific option...
+int t_option() { 
+    FILE *archive = fopen(f_archive_name, "rb");
+    if (archive == NULL) {
+        fprintf(stderr, Error_File_Is_Null);
+        return 2;
+    }
+
+    // Read archive file header
+    while (fread(header, 1, TAR_HEADER_SIZE, archive) == TAR_HEADER_SIZE) {
+        // Check file type
+        if (header[156] != REGTYPE && header[156] != REGTYPE_OLD) {
+            fprintf(stderr, Error_Unsupported_Header, header[156]);
+            fclose(archive);
+            return 2;
+        }
+
+        // Ensure null termination (:
+        header[100] = '\0';
+        
+        // If we had files specified by -t
+        if (t_iterator > 0 && t_is_requested_file(header)) {
+            t_mark_file_found(header);
+        }  
+        // If there were no files specified by -t, just write this file name
+        else if (strlen(header) > 0 && t_iterator == 0) {
+            printf("%s\n", header);
+        }
+        // Else it will print error at the end
+
+        // Ignore everything but filenames
+        unsigned long filesize;
+        sscanf(header + ARCHIVE_FILEDATA_SIZE, "%lo", &filesize);
+        fseek(archive, ((filesize + TAR_HEADER_SIZE - 1) / TAR_HEADER_SIZE) * TAR_HEADER_SIZE, SEEK_CUR);
+    }
+
+    fclose(archive);
+    int ret = t_report_not_found_files();
+    if (ret != 0) {
+        return ret;
+    }
+
+    t_write_found_files();
+    return 0;
 }
 
 int main(int argc, char* argv[]) {
@@ -163,12 +214,17 @@ int main(int argc, char* argv[]) {
         }
     }
 
+
+
     int arguments_check = check_set_options();
     if (arguments_check != 0) {
         return arguments_check;
     }
 
-    // TODO: This probably wont be only error possible
-    // so this will be encapsulated by some check_errors function
-    return t_report_not_found_files();
+    if (OptionsSet['t'] == true) {
+        if (t_option() != 0) {
+            return t_option();
+        }
+    }
+    return 0;
 }
