@@ -18,7 +18,6 @@
 #define Error_File_Not_Found "mytar: %s: Not found in archive\n"
 #define Error_Invalid_Option "mytar: Unknown option: -%c\n"
 #define Error_Unsupported_Header "mytar: Unsupported header type: %d\n"
-#define Error_Lone_Zero_Block "mytar: A lone zero block at %ld"
 const char* Error_No_Name_Provided = "mytar: No archive name provided.";
 const char* Error_File_Is_Null = "mytar: Archive file is NULL.";
 const char* Error_Exit_On_Failure = "mytar: Exiting with failure status due to previous errors";
@@ -162,22 +161,6 @@ void t_report_found_files_archive_order() {
     }
 }
 
-bool check_zero_block(const char* header_block) {
-    /*// Check if it even is correct size
-    if (strlen(header_block) != TAR_HEADER_SIZE) {
-        return false;
-    }*/
-
-    // Check if there are all zero bits(bytes)
-    for (int i = 0; i < TAR_HEADER_SIZE; ++i) {
-        if (header_block[i] != '\0') {
-            return false;
-        }
-    }
-
-    return true;
-}
-
 // When encountered t_option either list all, or when there was -t set, find only files needed
 // TODO: When more options are added, this should be decomposed into
 // function for traversing file, and to function doing things for specific option...
@@ -191,36 +174,6 @@ int t_option() {
 
     // Read archive file header
     while (!eof_detected && fread(header, 1, TAR_HEADER_SIZE, archive) == TAR_HEADER_SIZE) {
-        // Check for zero block, if so, figure out if it is alone or not
-        // https://www.gnu.org/software/tar/manual/html_section/Blocking.html
-        // Apparently unless I have -i option to implement, I don't have to check anymore, after I find ONE zero-block
-        // I know right after first zero block that it should be end
-        /*if (check_zero_block(header)) {
-            long int block_cnt = ftell(archive) / TAR_HEADER_SIZE;
-            if (fread(header, 1, TAR_HEADER_SIZE, archive) != TAR_HEADER_SIZE) {
-                block_cnt -= 1;
-            }
-            else if (!check_zero_block(header)) {
-                block_cnt -= 2;
-                fseek(archive, -TAR_HEADER_SIZE, SEEK_CUR);
-            }
-            fprintf(stderr, Error_Lone_Zero_Block, block_cnt);
-
-            return 2;
-        }*/
-
-        if (check_zero_block(header)) {
-            if (fread(header, 1, TAR_HEADER_SIZE, archive) != TAR_HEADER_SIZE) {
-                fprintf(stderr, "mytar: A lone zero block at %ld\n", ftell(archive) / TAR_HEADER_SIZE - 1);
-                break;
-            }
-            if (!check_zero_block(header)) {
-                fprintf(stderr, "mytar: A lone zero block at %ld\n", ftell(archive) / TAR_HEADER_SIZE - 2);
-                fseek(archive, -TAR_HEADER_SIZE, SEEK_CUR);
-            }
-            break;
-        }
-
         // Check file type
         if (header[156] != REGTYPE && header[156] != REGTYPE_OLD) {
             fprintf(stderr, Error_Unsupported_Header, header[156]);
@@ -242,8 +195,8 @@ int t_option() {
         // Else it will print error at the end
 
         // Ignore everything but filenames
-        long int filesize;
-        sscanf(header + ARCHIVE_FILEDATA_SIZE, "%ld", &filesize);
+        unsigned long filesize;
+        sscanf(header + ARCHIVE_FILEDATA_SIZE, "%lo", &filesize);
         fseek(archive, ((filesize + TAR_HEADER_SIZE - 1) / TAR_HEADER_SIZE) * TAR_HEADER_SIZE, SEEK_CUR);
     }
     fclose(archive);
@@ -294,6 +247,5 @@ int main(int argc, char* argv[]) {
             return t_option_ret;
         }
     }
-
     return 0;
 }
