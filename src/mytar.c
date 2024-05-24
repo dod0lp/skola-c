@@ -20,6 +20,7 @@
 #define Error_Unsupported_Header "mytar: Unsupported header type: %d\n"
 const char* Error_No_Name_Provided = "mytar: No archive name provided.";
 const char* Error_File_Is_Null = "mytar: Archive file is NULL.";
+const char* Error_Exit_On_Failure = "mytar: Exiting with failure status due to previous errors";
 
 // -f specify Archive Filename [1 arg]
 // -t List the contents of an archive. Arguments are optional.
@@ -134,9 +135,12 @@ int t_report_not_found_files() {
     return ret_code;
 }
 
-void t_write_found_files() {
+void t_report_found_files() {
     for (int i = 0; i < t_iterator; ++i) {
-        printf("%s\n", option_t_values[i]);
+        if (t_found_files[i]) {
+            printf("%s", option_t_values[i]);
+            printf("\n");
+        }
     }
 }
 
@@ -150,6 +154,7 @@ void copy_and_ensure_null_termination(char* to, const char* from, int max_len) {
 // TODO: When more options are added, this should be decomposed into
 // function for traversing file, and to function doing things for specific option...
 int t_option() { 
+    bool eof_detected = false;
     FILE *archive = fopen(f_archive_name, "rb");
     if (archive == NULL) {
         fprintf(stderr, Error_File_Is_Null);
@@ -157,7 +162,7 @@ int t_option() {
     }
 
     // Read archive file header
-    while (fread(header, 1, TAR_HEADER_SIZE, archive) == TAR_HEADER_SIZE) {
+    while (!eof_detected && fread(header, 1, TAR_HEADER_SIZE, archive) == TAR_HEADER_SIZE) {
         // Check file type
         if (header[156] != REGTYPE && header[156] != REGTYPE_OLD) {
             fprintf(stderr, Error_Unsupported_Header, header[156]);
@@ -183,14 +188,17 @@ int t_option() {
         sscanf(header + ARCHIVE_FILEDATA_SIZE, "%lo", &filesize);
         fseek(archive, ((filesize + TAR_HEADER_SIZE - 1) / TAR_HEADER_SIZE) * TAR_HEADER_SIZE, SEEK_CUR);
     }
-
     fclose(archive);
+
+    t_report_found_files();
+
     int ret = t_report_not_found_files();
     if (ret != 0) {
+        fprintf(stderr, Error_Exit_On_Failure);
+        fprintf(stderr, "\n");
         return ret;
     }
 
-    t_write_found_files();
     return 0;
 }
 
@@ -222,8 +230,9 @@ int main(int argc, char* argv[]) {
     }
 
     if (OptionsSet['t'] == true) {
-        if (t_option() != 0) {
-            return t_option();
+        int t_option_ret = t_option();
+        if (t_option_ret != 0) {
+            return t_option_ret;
         }
     }
     return 0;
