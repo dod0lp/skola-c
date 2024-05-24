@@ -37,7 +37,6 @@ char Options[NUM_OPTIONS] = { 'f', 't', 'x', 'v' };
 static bool OptionsSet[ALPHABET_LENGTH] = { false };
 
 char header[TAR_HEADER_SIZE];
-char header_check_zeroblock[TAR_HEADER_SIZE];
 
 
 // Usage: for (int i = 0; i < t_iterator; ++i) { 
@@ -201,13 +200,12 @@ int t_option() {
         // https://www.gnu.org/software/tar/manual/html_section/Blocking.html
         // Apparently unless I have -i option to implement, I don't have to check anymore, after I find ONE zero-block
         // I know right after first zero block that it should be end
-        if (check_zero_block(header)) {
+        /*if (check_zero_block(header)) {
             fread(header, 1, TAR_HEADER_SIZE, archive);
             fprintf(stderr, "mytar: A lone zero block at %ld\n", ftell(archive) / TAR_HEADER_SIZE - 1);
             fclose(archive);
             return 0;
-        }
-        fseek(archive, -TAR_HEADER_SIZE, SEEK_CUR);
+        }*/
 
         // Check file type
         if (header[156] != REGTYPE && header[156] != REGTYPE_OLD) {
@@ -233,19 +231,7 @@ int t_option() {
         // Ignore everything but filenames and check if I'm at the end of file by any chance
         int filesize;
         sscanf(header + ARCHIVE_FILEDATA_SIZE, "%d", &filesize);
-        if (filesize == 0) {
-            eof_detected = true;
-        }
-        // If I have not expected ending
-        else if (fread(header, 1, TAR_HEADER_SIZE, archive) != TAR_HEADER_SIZE) {
-            fprintf(stderr, "%s\n", Error_Unexpected_EOF);
-            fclose(archive);
-            return 2;
-        }
-        // Else go on
-        else {
-            fseek(archive, ((filesize + TAR_HEADER_SIZE - 1) / TAR_HEADER_SIZE) * TAR_HEADER_SIZE, SEEK_CUR);
-        }
+        fseek(archive, ((filesize + TAR_HEADER_SIZE - 1) / TAR_HEADER_SIZE) * TAR_HEADER_SIZE, SEEK_CUR);
     }
     fclose(archive);
 
