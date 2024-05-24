@@ -11,6 +11,7 @@
 
 // Error messages
 #define Error_File_Not_Found "mytar: %s: Not found in archive\n"
+#define Error_Invalid_Option "mytar: Unknown option: -%c\n"
 const char* Error_No_Name_Provided = "mytar: No archive name provided.";
 const char* Error_File_Is_Null = "mytar: Archive file is NULL.";
 
@@ -46,6 +47,7 @@ char f_archive_name[MAX_ARCHIVENAME_LEN] = "";
 // Checks if there is atleast one option set, and if there are some options set, check if they are all valid
 // If no option set, return 1
 // If invalid option set, return 2
+// Else return 0
 int check_set_options() {
     int option_set = 1;
 
@@ -55,15 +57,18 @@ int check_set_options() {
             bool temp = false;
 
             for (int j = 0; j < NUM_OPTIONS; ++j) {
-                printf("%d\n", i);
                 if (i == Options[j]) {
                     temp = true;
                 }
             }
             if (temp == false) {
+                fprintf(stderr, Error_Invalid_Option, (char)i);
                 return 2;
             }
         }
+    }
+    if (option_set == 1) {
+        fprintf(stderr, "mytar: need at least one option");
     }
     return option_set;
 }
@@ -158,15 +163,12 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    printf("%d", check_set_options());
-
-    // PRINT OPTIONS
-    // printf("%s\n", f_archive_name);
-
-    // for (int i = 0; i < t_iterator; ++i) {
-    //     printf("%s\n", option_t_values[i]);
-    // }
+    int arguments_check = check_set_options();
+    if (arguments_check != 0) {
+        return arguments_check;
+    }
 
     // TODO: This probably wont be only error possible
+    // so this will be encapsulated by some check_errors function
     return t_report_not_found_files();
 }
