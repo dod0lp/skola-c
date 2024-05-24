@@ -15,12 +15,14 @@
 #define ARCHIVE_FILEDATA_SIZE 124
 
 // Error messages
-#define Error_File_Not_Found "mytar: %s: Not found in archive\n"
-#define Error_Invalid_Option "mytar: Unknown option: -%c\n"
-#define Error_Unsupported_Header "mytar: Unsupported header type: %d\n"
+#define Error_File_Not_Found "mytar: %s: Not found in archive"
+#define Error_Invalid_Option "mytar: Unknown option: -%c"
+#define Error_Unsupported_Header "mytar: Unsupported header type: %d"
+#define Error_MissingZeroBlock "mytar: A lone zero block at %d"
 const char* Error_No_Name_Provided = "mytar: No archive name provided.";
 const char* Error_File_Is_Null = "mytar: Archive file is NULL.";
 const char* Error_Exit_On_Failure = "mytar: Exiting with failure status due to previous errors";
+const char* Error_Unexpected_EOF = "mytar: Unexpected EOF in archive";
 
 // -f specify Archive Filename [1 arg]
 // -t List the contents of an archive. Arguments are optional.
@@ -80,6 +82,7 @@ int check_set_options() {
             }
             if (temp == false) {
                 fprintf(stderr, Error_Invalid_Option, (char)i);
+                fprintf(stderr, "\n");
                 return 2;
             }
         }
@@ -139,6 +142,7 @@ int t_report_not_found_files() {
     for (int i = 0; i < t_iterator; ++i) {
         if (!t_found_files[i]) {
             fprintf(stderr, Error_File_Not_Found, option_t_values[i]);
+            fprintf(stderr, "\n");
             ret_code = 2;
         }
     }
@@ -161,6 +165,24 @@ void t_report_found_files_archive_order() {
     }
 }
 
+// Check if this header_block is a zero block, return true if it is zero block
+// If it is not a header block (incorrect size) return false
+bool check_zero_block(const char* header_block) {
+    // Check if it even is correct size
+    if (strlen(header_block) != TAR_HEADER_SIZE) {
+        return false;
+    }
+
+    // Check if there are all zero bits(bytes)
+    for (int i = 0; i < TAR_HEADER_SIZE; ++i) {
+        if (header_block[i] != (char) 0) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 // When encountered t_option either list all, or when there was -t set, find only files needed
 // TODO: When more options are added, this should be decomposed into
 // function for traversing file, and to function doing things for specific option...
@@ -174,9 +196,21 @@ int t_option() {
 
     // Read archive file header
     while (!eof_detected && fread(header, 1, TAR_HEADER_SIZE, archive) == TAR_HEADER_SIZE) {
+        // Check for zero block, if so, figure out if it is alone or not
+        // https://www.gnu.org/software/tar/manual/html_section/Blocking.html
+        // Apparently unless I have -i option to implement, I don't have to check anymore, after I find ONE zero-block
+        // I know right after first zero block that it should be end
+        if (check_zero_block(header)) {
+            fread(header, 1, TAR_HEADER_SIZE, archive);
+            fprintf(stderr, "mytar: A lone zero block at %ld\n", ftell(archive) / TAR_HEADER_SIZE - 1);
+            fclose(archive);
+            return 0;
+        }
+
         // Check file type
         if (header[156] != REGTYPE && header[156] != REGTYPE_OLD) {
             fprintf(stderr, Error_Unsupported_Header, header[156]);
+            fprintf(stderr, "\n");
             fclose(archive);
             return 2;
         }
@@ -194,10 +228,22 @@ int t_option() {
         }
         // Else it will print error at the end
 
-        // Ignore everything but filenames
-        unsigned long filesize;
-        sscanf(header + ARCHIVE_FILEDATA_SIZE, "%lo", &filesize);
-        fseek(archive, ((filesize + TAR_HEADER_SIZE - 1) / TAR_HEADER_SIZE) * TAR_HEADER_SIZE, SEEK_CUR);
+        // Ignore everything but filenames and check if I'm at the end of file by any chance
+        int filesize;
+        sscanf(header + ARCHIVE_FILEDATA_SIZE, "%d", &filesize);
+        if (filesize == 0) {
+            eof_detected = true;
+        }
+        // If I have not expected ending
+        else if (fread(header, 1, TAR_HEADER_SIZE, archive) != TAR_HEADER_SIZE) {
+            fprintf(stderr, "%s\n", Error_Unexpected_EOF);
+            fclose(archive);
+            return 2;
+        }
+        // Else go on
+        else {
+            fseek(archive, ((filesize + TAR_HEADER_SIZE - 1) / TAR_HEADER_SIZE) * TAR_HEADER_SIZE, SEEK_CUR);
+        }
     }
     fclose(archive);
 
