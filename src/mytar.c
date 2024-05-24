@@ -78,6 +78,7 @@ int check_set_options() {
     }
     if (option_set == 1) {
         fprintf(stderr, "mytar: need at least one option");
+        return 2;
     }
     return option_set;
 }
