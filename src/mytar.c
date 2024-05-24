@@ -42,6 +42,8 @@ char header[TAR_HEADER_SIZE];
     //    }
 int t_iterator = 0;
 char option_t_values[NUM_OPTIONS_STRINGS][MAX_OPTION_SIZE];
+int t_iterator_archive = 0;
+char option_t_values_archive[NUM_OPTIONS_STRINGS][MAX_OPTION_SIZE];
 
 // Files that were found for -t option
 bool t_found_files[NUM_OPTIONS_STRINGS] = { false };
@@ -52,6 +54,12 @@ char f_archive_name[MAX_ARCHIVENAME_LEN] = "";
 
 // char option_x_values
 // char option_v_values
+
+// String assingment strncpy
+void copy_and_ensure_null_termination(char* to, const char* from, int max_len) { // Maybe not the best name
+    strncpy(to, from, max_len);
+    to[max_len - 1] = '\0'; // apparently this is needed because we are in C
+}
 
 // Checks if there is atleast one option set, and if there are some options set, check if they are all valid
 // If no option set, return 1
@@ -78,7 +86,8 @@ int check_set_options() {
     }
     if (option_set == 1) {
         fprintf(stderr, "mytar: need at least one option");
-        return 2;
+        return 2; // i need to differentiate what happened, what if there is in the future some other error that needs implementation
+                    // .. what IF, butmaybe i shouldnt think about that and do this consistently idk
     }
     return option_set;
 }
@@ -119,6 +128,7 @@ void t_mark_file_found(char* file) {
     for (int i = 0; i < t_iterator; ++i) {
         if (strcmp(file, option_t_values[i]) == 0) {
             t_found_files[i] = true;
+            copy_and_ensure_null_termination(option_t_values_archive[t_iterator_archive++], file, MAX_OPTION_SIZE);
         }
     }
 }
@@ -145,10 +155,10 @@ void t_report_found_files() {
     }
 }
 
-// String assingment strncpy
-void copy_and_ensure_null_termination(char* to, const char* from, int max_len) { // Maybe not the best name
-    strncpy(to, from, max_len);
-    to[max_len - 1] = '\0'; // apparently this is needed because we are in C
+void t_report_found_files_archive_order() {
+    for (int i = 0; i < t_iterator_archive; ++i) {
+        printf("%s\n", option_t_values_archive[i]);
+    }
 }
 
 // When encountered t_option either list all, or when there was -t set, find only files needed
@@ -191,7 +201,7 @@ int t_option() {
     }
     fclose(archive);
 
-    t_report_found_files();
+    t_report_found_files_archive_order();
 
     int ret = t_report_not_found_files();
     if (ret != 0) {
@@ -205,6 +215,7 @@ int t_option() {
 
 int main(int argc, char* argv[]) {
     for (int i = 1; i < argc; ++i) {
+        // Found -f option and getting next value, that should be Archive name
         if (is_valid_option(argv[i]) == 'f') {
             if (i+1 < argc && !is_valid_option(argv[i + 1])) {
                 ++i;
@@ -214,12 +225,12 @@ int main(int argc, char* argv[]) {
                 return 1;
             }
         }
-
+        // Found -t option, getting all values that are not option after this
         else if (is_valid_option(argv[i]) == 't') {
             while (i+1 < argc && !is_valid_option(argv[i + 1])) {
                 ++i;
                 copy_and_ensure_null_termination(option_t_values[t_iterator++], argv[i], MAX_OPTION_SIZE);
-            }
+            } // for example if -t option is first thing on commandline, then there is -f archiveName. PROBABLY will need refactoring after new options
         } else if (i - 1 >= 1 && is_valid_option(argv[i-1]) == 0 && is_valid_option(argv[i]) == 0) {
             copy_and_ensure_null_termination(option_t_values[t_iterator++], argv[i], MAX_OPTION_SIZE);
         }
