@@ -161,6 +161,7 @@ void t_report_found_files_archive_order() {
     }
 }
 
+int cur_bytes = 0;
 // When encountered t_option either list all, or when there was -t set, find only files needed
 // TODO: When more options are added, this should be decomposed into
 // function for traversing file, and to function doing things for specific option...
@@ -197,6 +198,22 @@ int t_option() {
         // Ignore everything but filenames
         unsigned long filesize;
         sscanf(header + ARCHIVE_FILEDATA_SIZE, "%lo", &filesize);
+
+        int remaining_bytes = filesize;
+        cur_bytes += remaining_bytes;
+        while (remaining_bytes > 0) {
+            char buffer[1024];
+            int bytes_to_read = remaining_bytes < (int)sizeof(buffer) ? remaining_bytes : (int)sizeof(buffer);
+            int bytes_read = fread(buffer, 1, bytes_to_read, archive);
+            fseek(archive, -bytes_to_read, SEEK_CUR);
+            if (bytes_read == 0) {
+                fprintf(stderr, "mytar: A lone zero block at %d\n", cur_bytes/(512*2) + 2);
+                fclose(archive);
+                return 0;
+            }
+            remaining_bytes -= bytes_read;
+        }
+
         fseek(archive, ((filesize + TAR_HEADER_SIZE - 1) / TAR_HEADER_SIZE) * TAR_HEADER_SIZE, SEEK_CUR);
     }
     fclose(archive);
