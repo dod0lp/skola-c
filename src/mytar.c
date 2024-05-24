@@ -212,13 +212,11 @@ int t_option() {
         if (check_zero_block(header)) {
             if (fread(header, 1, TAR_HEADER_SIZE, archive) != TAR_HEADER_SIZE) {
                 fprintf(stderr, "mytar: A lone zero block at %ld\n", ftell(archive) / TAR_HEADER_SIZE - 1);
-                lone_zero_block_detected = true;
                 break;
             }
             if (!check_zero_block(header)) {
                 fprintf(stderr, "mytar: A lone zero block at %ld\n", ftell(archive) / TAR_HEADER_SIZE - 2);
                 fseek(archive, -TAR_HEADER_SIZE, SEEK_CUR);
-                lone_zero_block_detected = true;
             }
             break;
         }
@@ -296,6 +294,6 @@ int main(int argc, char* argv[]) {
             return t_option_ret;
         }
     }
-    
+
     return 0;
 }
