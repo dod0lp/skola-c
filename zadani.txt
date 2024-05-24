@@ -53,7 +53,7 @@ If unsure what is the correct behavior, check how GNU tar behaves on Linux.
 - No warnings allowed with "gcc -Wall -Wextra".
 
 - C stdio file API must be used (it is part of the seminar classes) for
-  manipulating the files.  System calls for processing files is not accepted
+  manipulating the files. System calls for processing files is not accepted
   (e.g. open(), read(), write(), ...).
 
 - The processing of command line arguments must be done manually.  Use of
