@@ -37,6 +37,7 @@ char Options[NUM_OPTIONS] = { 'f', 't', 'x', 'v' };
 static bool OptionsSet[ALPHABET_LENGTH] = { false };
 
 char header[TAR_HEADER_SIZE];
+char header_check_zeroblock[TAR_HEADER_SIZE];
 
 
 // Usage: for (int i = 0; i < t_iterator; ++i) { 
@@ -206,6 +207,7 @@ int t_option() {
             fclose(archive);
             return 0;
         }
+        fseek(archive, -TAR_HEADER_SIZE, SEEK_CUR);
 
         // Check file type
         if (header[156] != REGTYPE && header[156] != REGTYPE_OLD) {
