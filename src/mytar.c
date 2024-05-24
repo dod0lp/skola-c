@@ -163,14 +163,14 @@ void t_report_found_files_archive_order() {
 }
 
 bool check_zero_block(const char* header_block) {
-    // Check if it even is correct size
+    /*// Check if it even is correct size
     if (strlen(header_block) != TAR_HEADER_SIZE) {
         return false;
-    }
+    }*/
 
     // Check if there are all zero bits(bytes)
     for (int i = 0; i < TAR_HEADER_SIZE; ++i) {
-        if (header_block[i] != (char) 0) {
+        if (header_block[i] != '\0') {
             return false;
         }
     }
@@ -195,7 +195,7 @@ int t_option() {
         // https://www.gnu.org/software/tar/manual/html_section/Blocking.html
         // Apparently unless I have -i option to implement, I don't have to check anymore, after I find ONE zero-block
         // I know right after first zero block that it should be end
-        if (check_zero_block(header)) {
+        /*if (check_zero_block(header)) {
             long int block_cnt = ftell(archive) / TAR_HEADER_SIZE;
             if (fread(header, 1, TAR_HEADER_SIZE, archive) != TAR_HEADER_SIZE) {
                 block_cnt -= 1;
@@ -207,6 +207,20 @@ int t_option() {
             fprintf(stderr, Error_Lone_Zero_Block, block_cnt);
 
             return 2;
+        }*/
+
+        if (check_zero_block(header)) {
+            if (fread(header, 1, TAR_HEADER_SIZE, archive) != TAR_HEADER_SIZE) {
+                fprintf(stderr, "mytar: A lone zero block at %ld\n", ftell(archive) / TAR_HEADER_SIZE - 1);
+                lone_zero_block_detected = true;
+                break;
+            }
+            if (!check_zero_block(header)) {
+                fprintf(stderr, "mytar: A lone zero block at %ld\n", ftell(archive) / TAR_HEADER_SIZE - 2);
+                fseek(archive, -TAR_HEADER_SIZE, SEEK_CUR);
+                lone_zero_block_detected = true;
+            }
+            break;
         }
 
         // Check file type
@@ -282,5 +296,6 @@ int main(int argc, char* argv[]) {
             return t_option_ret;
         }
     }
+    
     return 0;
 }
