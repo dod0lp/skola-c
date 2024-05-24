@@ -214,11 +214,13 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        if (is_valid_option(argv[i]) == 't') {
+        else if (is_valid_option(argv[i]) == 't') {
             while (i+1 < argc && !is_valid_option(argv[i + 1])) {
                 ++i;
                 copy_and_ensure_null_termination(option_t_values[t_iterator++], argv[i], MAX_OPTION_SIZE);
             }
+        } else if (i - 1 >= 1 && is_valid_option(argv[i-1]) == 0 && is_valid_option(argv[i]) == 0) {
+            copy_and_ensure_null_termination(option_t_values[t_iterator++], argv[i], MAX_OPTION_SIZE);
         }
     }
 
