@@ -214,6 +214,17 @@ int t_option() {
             remaining_bytes -= bytes_read;
         }
 
+        // Check for truncated file
+        char temp[filesize];
+
+        unsigned long tempnum = fread(temp, 1, filesize, archive);
+        if (tempnum != filesize) {
+            fprintf(stderr, "mytar: Unexpected EOF in archive\n");
+            fprintf(stderr, "mytar: Error is not recoverable: exiting now\n");
+            return 2;
+        }
+        fseek(archive, -tempnum, SEEK_CUR);
+
         fseek(archive, ((filesize + TAR_HEADER_SIZE - 1) / TAR_HEADER_SIZE) * TAR_HEADER_SIZE, SEEK_CUR);
     }
     fclose(archive);
