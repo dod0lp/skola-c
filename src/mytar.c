@@ -15,12 +15,15 @@
 #define ARCHIVE_FILEDATA_SIZE 124
 
 // Error messages
-#define Error_File_Not_Found "mytar: %s: Not found in archive\n"
-#define Error_Invalid_Option "mytar: Unknown option: -%c\n"
-#define Error_Unsupported_Header "mytar: Unsupported header type: %d\n"
+#define Error_File_Not_Found "mytar: %s: Not found in archive"
+#define Error_Invalid_Option "mytar: Unknown option: -%c"
+#define Error_Unsupported_Header "mytar: Unsupported header type: %d"
+#define ErrorLoneBlock "mytar: A lone zero block at %d"
 const char* Error_No_Name_Provided = "mytar: No archive name provided.";
 const char* Error_File_Is_Null = "mytar: Archive file is NULL.";
 const char* Error_Exit_On_Failure = "mytar: Exiting with failure status due to previous errors";
+const char* Error_Unexpected_EOF = "mytar: Unexpected EOF in archive";
+const char* Error_Not_Recoverable = "mytar: Error is not recoverable: exiting now";
 
 // -f specify Archive Filename [1 arg]
 // -t List the contents of an archive. Arguments are optional.
@@ -80,6 +83,7 @@ int check_set_options() {
             }
             if (temp == false) {
                 fprintf(stderr, Error_Invalid_Option, (char)i);
+                fprintf(stderr, "\n");
                 return 2;
             }
         }
@@ -139,6 +143,7 @@ int t_report_not_found_files() {
     for (int i = 0; i < t_iterator; ++i) {
         if (!t_found_files[i]) {
             fprintf(stderr, Error_File_Not_Found, option_t_values[i]);
+            fprintf(stderr, "\n");
             ret_code = 2;
         }
     }
@@ -161,6 +166,36 @@ void t_report_found_files_archive_order() {
     }
 }
 
+int check_for_lone_block(FILE* archive, unsigned long filesize, int* cur_bytes) {
+    *cur_bytes += filesize;
+    while (filesize > 0) {
+        char buffer[1024];
+        int bytes_to_read = filesize < (int)sizeof(buffer) ? filesize : (int)sizeof(buffer);
+        int bytes_read = fread(buffer, 1, bytes_to_read, archive);
+        fseek(archive, -bytes_to_read, SEEK_CUR);
+        if (bytes_read == 0) {
+            fprintf(stderr, ErrorLoneBlock, *cur_bytes/(512*2) + 2);
+            fprintf(stderr, "\n");
+            fclose(archive);
+            return 0;
+        }
+        filesize -= bytes_read;
+    }
+
+    return 1;
+}
+
+int check_for_truncated_file(FILE* archive, unsigned long filesize) {
+    char temp[filesize];
+    unsigned long tempnum = fread(temp, 1, filesize, archive);
+    if (tempnum != filesize) {
+        fprintf(stderr, "%s\n%s\n", Error_Unexpected_EOF, Error_Not_Recoverable);
+        return 2;
+    }
+    fseek(archive, -tempnum, SEEK_CUR);
+    return 0;
+}
+
 int cur_bytes = 0;
 // When encountered t_option either list all, or when there was -t set, find only files needed
 // TODO: When more options are added, this should be decomposed into
@@ -178,6 +213,7 @@ int t_option() {
         // Check file type
         if (header[156] != REGTYPE && header[156] != REGTYPE_OLD) {
             fprintf(stderr, Error_Unsupported_Header, header[156]);
+            fprintf(stderr, "\n");
             fclose(archive);
             return 2;
         }
@@ -197,21 +233,17 @@ int t_option() {
 
         // Ignore everything but filenames
         unsigned long filesize;
+        // %lo means "read this as octa int" which it is saved as, maybe I should specify also length? like %12lo
         sscanf(header + ARCHIVE_FILEDATA_SIZE, "%lo", &filesize);
 
-        int remaining_bytes = filesize;
-        cur_bytes += remaining_bytes;
-        while (remaining_bytes > 0) {
-            char buffer[1024];
-            int bytes_to_read = remaining_bytes < (int)sizeof(buffer) ? remaining_bytes : (int)sizeof(buffer);
-            int bytes_read = fread(buffer, 1, bytes_to_read, archive);
-            fseek(archive, -bytes_to_read, SEEK_CUR);
-            if (bytes_read == 0) {
-                fprintf(stderr, "mytar: A lone zero block at %d\n", cur_bytes/(512*2) + 2);
-                fclose(archive);
-                return 0;
-            }
-            remaining_bytes -= bytes_read;
+        int loneblock_check = check_for_lone_block(archive, filesize, &cur_bytes);
+        if (loneblock_check == 0) {
+            return 0;
+        }
+
+        int truncated_check = check_for_truncated_file(archive, filesize);
+        if (truncated_check != 0) {
+            return truncated_check;
         }
 
         // Check for truncated file
@@ -219,8 +251,7 @@ int t_option() {
 
         unsigned long tempnum = fread(temp, 1, filesize, archive);
         if (tempnum != filesize) {
-            fprintf(stderr, "mytar: Unexpected EOF in archive\n");
-            fprintf(stderr, "mytar: Error is not recoverable: exiting now\n");
+            fprintf(stderr, "%s\n%s\n", Error_Unexpected_EOF, Error_Not_Recoverable);
             return 2;
         }
         fseek(archive, -tempnum, SEEK_CUR);
