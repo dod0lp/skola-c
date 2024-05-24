@@ -222,8 +222,6 @@ int main(int argc, char* argv[]) {
         }
     }
 
-
-
     int arguments_check = check_set_options();
     if (arguments_check != 0) {
         return arguments_check;
