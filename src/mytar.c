@@ -19,11 +19,11 @@
 #define Error_Invalid_Option "mytar: Unknown option: -%c"
 #define Error_Unsupported_Header "mytar: Unsupported header type: %d"
 #define ErrorLoneBlock "mytar: A lone zero block at %d"
-const char* Error_No_Name_Provided = "mytar: No archive name provided.";
-const char* Error_File_Is_Null = "mytar: Archive file is NULL.";
-const char* Error_Exit_On_Failure = "mytar: Exiting with failure status due to previous errors";
-const char* Error_Unexpected_EOF = "mytar: Unexpected EOF in archive";
-const char* Error_Not_Recoverable = "mytar: Error is not recoverable: exiting now";
+#define Error_No_Name_Provided "mytar: No archive name provided."
+#define Error_File_Is_Null "mytar: Archive file is NULL."
+#define Error_Exit_On_Failure "mytar: Exiting with failure status due to previous errors"
+#define Error_Unexpected_EOF "mytar: Unexpected EOF in archive"
+#define Error_Not_Recoverable "mytar: Error is not recoverable: exiting now"
 
 // -f specify Archive Filename [1 arg]
 // -t List the contents of an archive. Arguments are optional.
