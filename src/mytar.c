@@ -10,8 +10,8 @@
 #define ALPHABET_LENGTH 256
 
 #define TAR_HEADER_SIZE 512
-#define REGTYPE '0' // new tar or something, otherwise it is \0 or w.e
-#define REGTYPE_OLD '\0'
+#define REGTYPE '0' // new tar header[156] check
+#define REGTYPE_OLD '\0' // old tar header[156] check
 #define ARCHIVE_FILEDATA_SIZE 124
 
 // Error messages
@@ -219,6 +219,7 @@ int t_option() {
         }
 
         // Ensure null termination (:
+        // I can rewrite this because it is saved as local variable, not file pointer
         header[100] = '\0';
         
         // If we had files specified by -t
