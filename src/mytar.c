@@ -169,12 +169,13 @@ void t_report_found_files_archive_order() {
 int check_for_lone_block(FILE* archive, unsigned long filesize, int* cur_bytes) {
     *cur_bytes += filesize;
     while (filesize > 0) {
-        char buffer[1024];
+        char buffer[TAR_HEADER_SIZE * 2];
         int bytes_to_read = filesize < (int)sizeof(buffer) ? filesize : (int)sizeof(buffer);
         int bytes_read = fread(buffer, 1, bytes_to_read, archive);
         fseek(archive, -bytes_to_read, SEEK_CUR);
+
         if (bytes_read == 0) {
-            fprintf(stderr, ErrorLoneBlock, *cur_bytes/(512*2) + 2);
+            fprintf(stderr, ErrorLoneBlock, *cur_bytes/(TAR_HEADER_SIZE * 2) + 2);
             fprintf(stderr, "\n");
             fclose(archive);
             return 0;
